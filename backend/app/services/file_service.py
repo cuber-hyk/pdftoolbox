@@ -18,15 +18,15 @@ class FileService:
 
     def generate_file_id(self) -> str:
         """Generate unique file ID."""
-        return f'f_{uuid.uuid4().hex[:12]}'
+        return f"f_{uuid.uuid4().hex[:12]}"
 
     def generate_upload_id(self) -> str:
         """Generate unique upload ID."""
-        return f'ul_{uuid.uuid4().hex[:12]}'
+        return f"ul_{uuid.uuid4().hex[:12]}"
 
     def get_file_path(self, file_id: str) -> str:
         """Get file path from file ID."""
-        return os.path.join(settings.UPLOAD_DIR, f'{file_id}.pdf')
+        return os.path.join(settings.UPLOAD_DIR, f"{file_id}.pdf")
 
     def get_expires_at(self) -> datetime:
         """Get file expiration time."""
@@ -38,68 +38,96 @@ class FileService:
 
         try:
             # Save file
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 content = await file.read()
                 f.write(content)
 
             # Get PDF metadata
             doc = fitz.open(file_path)
+
+            # Handle encrypted PDFs
+            if doc.is_encrypted:
+                doc.close()
+                return {
+                    "file_id": file_id,
+                    "name": file.filename or "unknown.pdf",
+                    "size": len(content),
+                    "pages": None,
+                    "metadata": {},
+                    "is_encrypted": True,
+                }
+
             pages = len(doc)
-            metadata = doc.metadata
+            metadata = doc.metadata or {}
             doc.close()
 
             return {
-                'file_id': file_id,
-                'name': file.filename or 'unknown.pdf',
-                'size': len(content),
-                'pages': pages,
-                'metadata': {
-                    'title': metadata.get('title'),
-                    'author': metadata.get('author'),
-                    'created': metadata.get('creationDate')
-                }
+                "file_id": file_id,
+                "name": file.filename or "unknown.pdf",
+                "size": len(content),
+                "pages": pages,
+                "metadata": {
+                    "title": metadata.get("title"),
+                    "author": metadata.get("author"),
+                    "created": metadata.get("creationDate"),
+                },
+                "is_encrypted": False,
             }
         except Exception as e:
             # Clean up file if processing failed
             if os.path.exists(file_path):
                 os.remove(file_path)
-            raise HTTPException(status_code=400, detail=f'Invalid PDF file: {str(e)}')
+            raise HTTPException(status_code=400, detail=f"Invalid PDF file: {str(e)}")
 
     async def save_uploaded_file_with_prefix(
         self, file: UploadFile, file_id: str, upload_id: str
     ) -> dict:
         """Save uploaded file with upload_id prefix and return metadata."""
         # File format: {upload_id}_{file_id}.pdf
-        file_path = os.path.join(settings.UPLOAD_DIR, f'{upload_id}_{file_id}.pdf')
+        file_path = os.path.join(settings.UPLOAD_DIR, f"{upload_id}_{file_id}.pdf")
 
         try:
             # Save file
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 content = await file.read()
                 f.write(content)
 
             # Get PDF metadata
             doc = fitz.open(file_path)
+
+            # Handle encrypted PDFs
+            if doc.is_encrypted:
+                doc.close()
+                return {
+                    "file_id": file_id,
+                    "name": file.filename or "unknown.pdf",
+                    "size": len(content),
+                    "pages": None,
+                    "metadata": {},
+                    "is_encrypted": True,
+                }
+
             pages = len(doc)
-            metadata = doc.metadata
+            metadata = doc.metadata or {}
             doc.close()
 
             return {
-                'file_id': file_id,
-                'name': file.filename or 'unknown.pdf',
-                'size': len(content),
-                'pages': pages,
-                'metadata': {
-                    'title': metadata.get('title'),
-                    'author': metadata.get('author'),
-                    'created': metadata.get('creationDate')
-                }
+                "file_id": file_id,
+                "name": file.filename or "unknown.pdf",
+                "size": len(content),
+                "pages": pages,
+                "metadata": {
+                    "title": metadata.get("title"),
+                    "author": metadata.get("author"),
+                    "created": metadata.get("creationDate"),
+                },
+                "is_encrypted": False,
             }
         except Exception as e:
             # Clean up file if processing failed
             if os.path.exists(file_path):
                 os.remove(file_path)
-            raise HTTPException(status_code=400, detail=f'Invalid PDF file: {str(e)}')
+            raise HTTPException(status_code=400, detail=f"Invalid PDF file: {str(e)}")
 
     async def save_uploaded_file_with_index(
         self, file: UploadFile, file_id: str, upload_id: str, index: int
@@ -111,37 +139,56 @@ class FileService:
         """
         # File format: {upload_id}_{index:04d}_{file_id}.pdf
         # Example: ul_abc123_0000_f_def456.pdf
-        file_path = os.path.join(settings.UPLOAD_DIR, f'{upload_id}_{index:04d}_{file_id}.pdf')
+        file_path = os.path.join(
+            settings.UPLOAD_DIR, f"{upload_id}_{index:04d}_{file_id}.pdf"
+        )
 
         try:
             # Save file
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 content = await file.read()
                 f.write(content)
 
             # Get PDF metadata
             doc = fitz.open(file_path)
+
+            # Handle encrypted PDFs
+            if doc.is_encrypted:
+                # For encrypted PDFs, we can't get page count or metadata without password
+                # But we still accept the file for decryption operations
+                doc.close()
+                return {
+                    "file_id": file_id,
+                    "index": index,  # 保存索引用于前端显示和删除
+                    "name": file.filename or "unknown.pdf",
+                    "size": len(content),
+                    "pages": None,  # Unknown without password
+                    "metadata": {},
+                    "is_encrypted": True,  # Mark as encrypted
+                }
+
             pages = len(doc)
-            metadata = doc.metadata
+            metadata = doc.metadata or {}  # Handle None metadata
             doc.close()
 
             return {
-                'file_id': file_id,
-                'index': index,  # 保存索引用于前端显示和删除
-                'name': file.filename or 'unknown.pdf',
-                'size': len(content),
-                'pages': pages,
-                'metadata': {
-                    'title': metadata.get('title'),
-                    'author': metadata.get('author'),
-                    'created': metadata.get('creationDate')
-                }
+                "file_id": file_id,
+                "index": index,  # 保存索引用于前端显示和删除
+                "name": file.filename or "unknown.pdf",
+                "size": len(content),
+                "pages": pages,
+                "metadata": {
+                    "title": metadata.get("title"),
+                    "author": metadata.get("author"),
+                    "created": metadata.get("creationDate"),
+                },
+                "is_encrypted": False,
             }
         except Exception as e:
             # Clean up file if processing failed
             if os.path.exists(file_path):
                 os.remove(file_path)
-            raise HTTPException(status_code=400, detail=f'Invalid PDF file: {str(e)}')
+            raise HTTPException(status_code=400, detail=f"Invalid PDF file: {str(e)}")
 
     def validate_file(self, file: UploadFile) -> None:
         """Validate uploaded file."""
@@ -149,7 +196,7 @@ class FileService:
         if file.content_type not in settings.ALLOWED_FILE_TYPES:
             raise HTTPException(
                 status_code=415,
-                detail=f'Invalid file type. Allowed: {settings.ALLOWED_FILE_TYPES}'
+                detail=f"Invalid file type. Allowed: {settings.ALLOWED_FILE_TYPES}",
             )
 
         # Check file size
@@ -158,7 +205,7 @@ class FileService:
         if len(content) > settings.MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=413,
-                detail=f'File too large. Max size: {settings.MAX_FILE_SIZE / 1024 / 1024}MB'
+                detail=f"File too large. Max size: {settings.MAX_FILE_SIZE / 1024 / 1024}MB",
             )
 
     def delete_file(self, file_id: str) -> bool:
