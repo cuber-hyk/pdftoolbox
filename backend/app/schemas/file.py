@@ -13,13 +13,14 @@ class FileInfo(BaseModel):
     file_id: str
     name: str
     size: int
-    pages: int
+    pages: Optional[int] = None
     metadata: Optional[FileMetadata] = None
+    is_encrypted: Optional[bool] = False
 
 
 class UploadResponse(BaseModel):
     success: bool = True
-    data: 'UploadData'
+    data: "UploadData"
 
 
 class UploadData(BaseModel):
@@ -31,7 +32,7 @@ class UploadData(BaseModel):
 
 class ErrorResponse(BaseModel):
     success: bool = False
-    error: 'ErrorDetail'
+    error: "ErrorDetail"
 
 
 class ErrorDetail(BaseModel):
