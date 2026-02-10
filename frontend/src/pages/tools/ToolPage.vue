@@ -846,6 +846,9 @@ watch(() => options.value.mode, (newMode) => {
                   <template v-if="tool?.id === 'encrypt_decrypt' && options.operation === 'encrypt'">
                     <div class="space-y-2">
                       <label class="text-sm font-medium text-slate-700">Permissions</label>
+                      <p class="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                        Note: Some PDF viewers (especially browsers) may ignore these restrictions. For full protection, use Adobe Acrobat.
+                      </p>
                       <div class="space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
                           <input
