@@ -5,6 +5,7 @@ import { api } from '@/api/client'
 import type { Tool, Job } from '@/types'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import ParamConfig from '@/components/business/ParamConfig.vue'
 import { generateWatermarkImage, parseColorWithOpacity } from '@/utils/watermark'
 import WatermarkTool from '@/components/tools/WatermarkTool.vue'
 import RemoveWatermarkTool from '@/components/tools/RemoveWatermarkTool.vue'
@@ -343,54 +344,6 @@ const regenerateFileIds = () => {
     size: file.size
   }))
 }
-
-// 获取工具选项
-const getOption = (name: string) => {
-  return tool.value?.options?.find((o: any) => o.name === name)
-}
-
-// 判断选项是否应该显示（处理依赖关系）
-const shouldShowOption = (name: string) => {
-  const opt = getOption(name)
-  if (!opt) return false
-
-  // 检查是否有依赖条件 depends_on
-  if (opt.depends_on) {
-    for (const [key, value] of Object.entries(opt.depends_on)) {
-      if (options.value[key] !== value) {
-        return false
-      }
-    }
-  }
-
-  return true
-}
-
-// 监听 mode 变化，重置相关选项
-const handleModeChange = () => {
-  // 当 mode 改变时，清除可能冲突的选项
-  if (options.value.mode === 'single') {
-    // 单页模式不需要额外选项
-  } else if (options.value.mode === 'range') {
-    // 清空 every_n
-    delete options.value.every_n
-  } else if (options.value.mode === 'every') {
-    // 清空 ranges
-    delete options.value.ranges
-  }
-}
-
-// 监听 mode 变化
-watch(() => options.value.mode, (newMode) => {
-  if (newMode === 'range') {
-    options.value.every_n = undefined
-  } else if (newMode === 'every') {
-    options.value.ranges = undefined
-  } else if (newMode === 'single') {
-    options.value.ranges = undefined
-    options.value.every_n = undefined
-  }
-})
 </script>
 
 <template>
@@ -688,213 +641,24 @@ watch(() => options.value.mode, (newMode) => {
         </div>
             </div>
 
-            <!-- Right Panel: Options & Actions (1/3) -->
-            <div class="flex flex-col gap-4 h-full min-h-0">
-              <!-- Tool Options -->
-              <div v-if="tool?.options && tool.options.length > 0" class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-                <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
-                  <h3 class="text-sm font-semibold text-slate-900">Processing Options</h3>
-                </div>
-                <div class="p-4 space-y-4 overflow-y-auto flex-1">
-                  <!-- Split Mode Select -->
-                  <div v-if="getOption('mode')" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('mode').label }}</label>
-                    <select
-                      v-model="options.mode"
-                      @change="handleModeChange"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
-                    >
-                      <option v-for="opt in getOption('mode').options" :key="opt.value" :value="opt.value">
-                        {{ opt.label }}
-                      </option>
-                    </select>
-                    <p v-if="getOption('mode').description" class="text-xs text-slate-500">{{ getOption('mode').description }}</p>
+              <!-- Right Panel: Options & Actions (1/3) -->
+              <div class="flex flex-col gap-4 h-full min-h-0">
+                <!-- Tool Options Panel -->
+                <div v-if="tool?.options && tool.options.length > 0" class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                  <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-sm font-semibold text-slate-900">Processing Options</h3>
                   </div>
-
-                  <!-- Page Ranges Input - Only show when mode is 'range' -->
-                  <div v-if="tool?.id === 'split' && options.mode === 'range'" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('ranges')?.label || 'Page Ranges' }}</label>
-                    <input
-                      v-model="options.ranges"
-                      type="text"
-                      :placeholder="getOption('ranges')?.placeholder || '1-3, 5-7'"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                    >
-                    <p v-if="getOption('ranges')?.description" class="text-xs text-slate-500">{{ getOption('ranges')?.description }}</p>
-                    <p class="text-xs text-slate-400">Examples: <code class="bg-slate-200 px-1 rounded">1-3</code> <code class="bg-slate-200 px-1 rounded">5-7</code> <code class="bg-slate-200 px-1 rounded">1-3, 5-7</code></p>
-                  </div>
-
-                  <!-- Every N Pages Input - Only show when mode is 'every' -->
-                  <div v-if="tool?.id === 'split' && options.mode === 'every'" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('every_n')?.label || 'Pages per File' }}</label>
-                    <input
-                      v-model.number="options.every_n"
-                      type="number"
-                      :min="getOption('every_n')?.min || 1"
-                      :max="getOption('every_n')?.max || 100"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                    >
-                    <p v-if="getOption('every_n')?.description" class="text-xs text-slate-500">{{ getOption('every_n')?.description }}</p>
-                    <div class="flex items-center gap-2 mt-2">
-                      <button
-                        v-for="n in [1, 2, 3, 5, 10]"
-                        :key="n"
-                        @click="options.every_n = n"
-                        class="px-3 py-1 text-sm rounded-md border transition-colors"
-                        :class="options.every_n === n ? 'bg-primary-100 border-primary-500 text-primary-700' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'"
-                      >
-                        {{ n }}
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Pages Input (for extract_pages) -->
-                  <div v-if="shouldShowOption('pages')" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('pages').label }}</label>
-                    <input
-                      v-model="options.pages"
-                      type="text"
-                      :placeholder="getOption('pages').placeholder"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                    >
-                    <p v-if="getOption('pages').description" class="text-xs text-slate-500">{{ getOption('pages').description }}</p>
-                  </div>
-
-                  <!-- Watermark Text Input -->
-                  <div v-if="shouldShowOption('text')" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('text').label }}</label>
-                    <input
-                      v-model="options.text"
-                      type="text"
-                      :placeholder="getOption('text').placeholder"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                    >
-                  </div>
-
-                  <!-- Number Input (for opacity, rotation, etc.) -->
-                  <div v-if="shouldShowOption('opacity')" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('opacity').label }}</label>
-                    <div class="flex items-center gap-3">
-                      <input
-                        v-model.number="options.opacity"
-                        type="range"
-                        :min="getOption('opacity').min"
-                        :max="getOption('opacity').max"
-                        class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-                      >
-                      <span class="text-sm font-medium text-slate-700 w-12 text-center">{{ options.opacity }}%</span>
-                    </div>
-                  </div>
-
-                  <div v-if="shouldShowOption('rotation')" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('rotation').label }}</label>
-                    <div class="flex items-center gap-3">
-                      <input
-                        v-model.number="options.rotation"
-                        type="range"
-                        :min="getOption('rotation').min"
-                        :max="getOption('rotation').max"
-                        class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-                      >
-                      <span class="text-sm font-medium text-slate-700 w-12 text-center">{{ options.rotation }}°</span>
-                    </div>
-                  </div>
-
-                  <!-- Encrypt/Decrypt Operation -->
-                  <div v-if="tool?.id === 'encrypt_decrypt'" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('operation')?.label }}</label>
-                    <select
-                      v-model="options.operation"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
-                    >
-                      <option v-for="opt in getOption('operation')?.options" :key="opt.value" :value="opt.value">
-                        {{ opt.label }}
-                      </option>
-                    </select>
-                  </div>
-
-                  <!-- Password Input -->
-                  <div v-if="tool?.id === 'encrypt_decrypt'" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">
-                      {{ getOption('password')?.label }}
-                      <span class="text-red-500">*</span>
-                    </label>
-                    <input
-                      v-model="options.password"
-                      type="password"
-                      :placeholder="getOption('password')?.placeholder || 'Enter password'"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                    >
-                    <p v-if="getOption('password')?.description" class="text-xs text-slate-500">{{ getOption('password').description }}</p>
-                  </div>
-
-                  <!-- Encryption Algorithm (only for encrypt operation) -->
-                  <div v-if="tool?.id === 'encrypt_decrypt' && options.operation === 'encrypt'" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ getOption('algorithm')?.label }}</label>
-                    <select
-                      v-model="options.algorithm"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
-                    >
-                      <option v-for="opt in getOption('algorithm')?.options" :key="opt.value" :value="opt.value">
-                        {{ opt.label }}
-                      </option>
-                    </select>
-                    <p v-if="getOption('algorithm')?.description" class="text-xs text-slate-500">{{ getOption('algorithm').description }}</p>
-                  </div>
-
-                  <!-- Encryption Permissions (only for encrypt operation) -->
-                  <template v-if="tool?.id === 'encrypt_decrypt' && options.operation === 'encrypt'">
-                    <div class="space-y-2">
-                      <label class="text-sm font-medium text-slate-700">Permissions</label>
-                      <p class="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                        Note: Some PDF viewers (especially browsers) may ignore these restrictions. For full protection, use Adobe Acrobat.
-                      </p>
-                      <div class="space-y-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                          <input
-                            v-model="options.allow_printing"
-                            type="checkbox"
-                            class="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
-                          >
-                          <span class="text-sm text-slate-700">{{ getOption('allow_printing')?.label }}</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                          <input
-                            v-model="options.allow_copying"
-                            type="checkbox"
-                            class="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
-                          >
-                          <span class="text-sm text-slate-700">{{ getOption('allow_copying')?.label }}</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                          <input
-                            v-model="options.allow_modifying"
-                            type="checkbox"
-                            class="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
-                          >
-                          <span class="text-sm text-slate-700">{{ getOption('allow_modifying')?.label }}</span>
-                        </label>
-                      </div>
-                    </div>
-                  </template>
-
-                  <!-- Generic Select -->
-                  <div v-for="opt in tool.options.filter(o => o.type === 'select' && o.name !== 'mode' && o.name !== 'operation' && o.name !== 'algorithm')" :key="opt.name" class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700">{{ opt.label }}</label>
-                    <select
-                      v-model="options[opt.name]"
-                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
-                    >
-                      <option v-for="choice in opt.options" :key="choice.value" :value="choice.value">
-                        {{ choice.label }}
-                      </option>
-                    </select>
-                    <p v-if="opt.description" class="text-xs text-slate-500">{{ opt.description }}</p>
+                  <div class="p-4 overflow-y-auto flex-1">
+                    <!-- ParamConfig for unified option rendering -->
+                    <ParamConfig
+                      :options="tool.options"
+                      v-model="options"
+                      :tool-id="tool.id"
+                    />
                   </div>
                 </div>
-              </div>
 
-              <!-- Action Button -->
+                <!-- Action Button -->
               <button
                 v-if="selectedFiles.length > 0 && !isUploading && !isProcessing && !isCompleted && !isFailed"
                 @click="onStartProcessing"
