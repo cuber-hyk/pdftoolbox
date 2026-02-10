@@ -83,21 +83,20 @@ class EncryptDecryptProcessor(BaseProcessor):
         }
         encryption_method = encryption_map.get(algorithm, fitz.PDF_ENCRYPT_AES_256)
 
-        # Build permissions
+        # Build permissions - these are the operations that ARE ALLOWED
+        # Start with minimal permissions (only accessibility for screen readers)
         permissions = fitz.PDF_PERM_ACCESSIBILITY  # Always allow accessibility
 
         if allow_printing:
-            permissions |= fitz.PDF_PERM_PRINT
-            permissions |= fitz.PDF_PERM_PRINT_HQ
+            permissions |= fitz.PDF_PERM_PRINT | fitz.PDF_PERM_PRINT_HQ
 
         if allow_copying:
-            permissions |= fitz.PDF_PERM_COPY
-            permissions |= fitz.PDF_PERM_ANNOTATE  # Usually goes with copy
+            permissions |= fitz.PDF_PERM_COPY | fitz.PDF_PERM_ANNOTATE
 
         if allow_modifying:
-            permissions |= fitz.PDF_PERM_MODIFY
-            permissions |= fitz.PDF_PERM_ASSEMBLE
-            permissions |= fitz.PDF_PERM_FORM
+            permissions |= (
+                fitz.PDF_PERM_MODIFY | fitz.PDF_PERM_ASSEMBLE | fitz.PDF_PERM_FORM
+            )
 
         # Validate PDF (check if already encrypted)
         try:
