@@ -44,12 +44,23 @@ const updateValue = (name: string, value: any) => {
 }
 
 const isOptionVisible = (option: ToolOption): boolean => {
-  if (!option.visible_when) return true
+  // 检查 visible_when (旧字段名)
+  if (option.visible_when) {
+    return Object.entries(option.visible_when).every(([key, expectedValue]) => {
+      const actualValue = localValues.value[key]
+      return actualValue === expectedValue
+    })
+  }
+  
+  // 检查 depends_on (新字段名)
+  if (option.depends_on) {
+    return Object.entries(option.depends_on).every(([key, expectedValue]) => {
+      const actualValue = localValues.value[key]
+      return actualValue === expectedValue
+    })
+  }
 
-  return Object.entries(option.visible_when).every(([key, expectedValue]) => {
-    const actualValue = localValues.value[key]
-    return actualValue === expectedValue
-  })
+  return true
 }
 
 const visibleOptions = computed(() => {

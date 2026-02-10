@@ -26,6 +26,8 @@ export interface ToolOption {
   suffix?: string
   options?: Array<{ value: string; label: string }>
   visible_when?: Record<string, string>
+  depends_on?: Record<string, string>
+  required_when?: Record<string, string>
   accept?: string[]
 }
 

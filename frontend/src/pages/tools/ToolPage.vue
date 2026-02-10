@@ -113,6 +113,14 @@ const handleRemoveWatermarkImageProcessing = async ({ uploadId, options }: { upl
 }
 
 const onStartProcessing = async () => {
+  // 检查加密/解密工具的密码是否已填写
+  if (toolId.value === 'encrypt_decrypt') {
+    if (!options.value.password || options.value.password.trim() === '') {
+      alert('请输入密码')
+      return
+    }
+  }
+
   // 如果还没有上传文件，先上传所有文件
   const uid = uploadId.value || await uploadAllFiles()
   if (!uid) return
@@ -792,8 +800,83 @@ watch(() => options.value.mode, (newMode) => {
                     </div>
                   </div>
 
+                  <!-- Encrypt/Decrypt Operation -->
+                  <div v-if="tool?.id === 'encrypt_decrypt'" class="space-y-2">
+                    <label class="text-sm font-medium text-slate-700">{{ getOption('operation')?.label }}</label>
+                    <select
+                      v-model="options.operation"
+                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
+                    >
+                      <option v-for="opt in getOption('operation')?.options" :key="opt.value" :value="opt.value">
+                        {{ opt.label }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Password Input -->
+                  <div v-if="tool?.id === 'encrypt_decrypt'" class="space-y-2">
+                    <label class="text-sm font-medium text-slate-700">
+                      {{ getOption('password')?.label }}
+                      <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                      v-model="options.password"
+                      type="password"
+                      :placeholder="getOption('password')?.placeholder || 'Enter password'"
+                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                    >
+                    <p v-if="getOption('password')?.description" class="text-xs text-slate-500">{{ getOption('password').description }}</p>
+                  </div>
+
+                  <!-- Encryption Algorithm (only for encrypt operation) -->
+                  <div v-if="tool?.id === 'encrypt_decrypt' && options.operation === 'encrypt'" class="space-y-2">
+                    <label class="text-sm font-medium text-slate-700">{{ getOption('algorithm')?.label }}</label>
+                    <select
+                      v-model="options.algorithm"
+                      class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm"
+                    >
+                      <option v-for="opt in getOption('algorithm')?.options" :key="opt.value" :value="opt.value">
+                        {{ opt.label }}
+                      </option>
+                    </select>
+                    <p v-if="getOption('algorithm')?.description" class="text-xs text-slate-500">{{ getOption('algorithm').description }}</p>
+                  </div>
+
+                  <!-- Encryption Permissions (only for encrypt operation) -->
+                  <template v-if="tool?.id === 'encrypt_decrypt' && options.operation === 'encrypt'">
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-slate-700">Permissions</label>
+                      <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input
+                            v-model="options.allow_printing"
+                            type="checkbox"
+                            class="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                          >
+                          <span class="text-sm text-slate-700">{{ getOption('allow_printing')?.label }}</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input
+                            v-model="options.allow_copying"
+                            type="checkbox"
+                            class="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                          >
+                          <span class="text-sm text-slate-700">{{ getOption('allow_copying')?.label }}</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input
+                            v-model="options.allow_modifying"
+                            type="checkbox"
+                            class="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                          >
+                          <span class="text-sm text-slate-700">{{ getOption('allow_modifying')?.label }}</span>
+                        </label>
+                      </div>
+                    </div>
+                  </template>
+
                   <!-- Generic Select -->
-                  <div v-for="opt in tool.options.filter(o => o.type === 'select' && o.name !== 'mode')" :key="opt.name" class="space-y-2">
+                  <div v-for="opt in tool.options.filter(o => o.type === 'select' && o.name !== 'mode' && o.name !== 'operation' && o.name !== 'algorithm')" :key="opt.name" class="space-y-2">
                     <label class="text-sm font-medium text-slate-700">{{ opt.label }}</label>
                     <select
                       v-model="options[opt.name]"
