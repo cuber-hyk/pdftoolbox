@@ -125,7 +125,7 @@ const handleFileUpload = async (files: FileList) => {
 
   const file = files[0]
   if (!file.type.includes('pdf')) {
-    alert('请上传 PDF 文件')
+    alert('Please upload a PDF file')
     return
   }
 
@@ -441,18 +441,18 @@ const LAYOUT_CONFIG = {
         </svg>
       </div>
       <p class="text-xl font-semibold text-slate-700">
-        {{ isDragOver ? '释放文件开始上传' : '拖拽 PDF 文件到此处' }}
+        {{ isDragOver ? 'Drop file to upload' : 'Drag PDF file here' }}
       </p>
-      <p class="text-base text-slate-500">支持预览水印效果，实时查看添加效果</p>
+      <p class="text-base text-slate-500">Preview watermark effect in real-time</p>
       <div class="flex items-center gap-4 w-full max-w-xs">
         <div class="h-px flex-1 bg-slate-300"></div>
-        <span class="text-sm text-slate-400">或</span>
+        <span class="text-sm text-slate-400">or</span>
         <div class="h-px flex-1 bg-slate-300"></div>
       </div>
       <button
         @click="triggerFileSelect"
         class="px-8 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-base font-semibold shadow-lg shadow-primary-200">
-        选择文件
+        Select File
       </button>
     </div>
   </div>
@@ -469,7 +469,7 @@ const LAYOUT_CONFIG = {
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
       </div>
-      <p class="text-lg font-semibold text-slate-900 mb-1">上传中...</p>
+      <p class="text-lg font-semibold text-slate-900 mb-1">Uploading...</p>
       <p class="text-base text-slate-500 mb-4">{{ uploadProgress }}%</p>
       <!-- 进度条 -->
       <div class="w-80 bg-slate-200 rounded-full h-3 mx-auto">
@@ -490,7 +490,7 @@ const LAYOUT_CONFIG = {
         v-if="showPreview && showThumbnailSidebar && pdfPreviewImages.length > 1"
         class="w-28 flex-shrink-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
         <div class="px-3 py-2 border-b border-slate-200 bg-slate-50 flex-shrink-0">
-          <span class="text-xs font-medium text-slate-600">页面</span>
+          <span class="text-xs font-medium text-slate-600">Pages</span>
         </div>
         <div class="flex-1 overflow-y-auto p-2 space-y-2">
           <div
@@ -519,7 +519,7 @@ const LAYOUT_CONFIG = {
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">
         <div class="px-3 py-2 border-b border-slate-200 flex-shrink-0 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <h3 class="font-semibold text-slate-900 text-sm">PDF 预览</h3>
+            <h3 class="font-semibold text-slate-900 text-sm">PDF Preview</h3>
             <!-- 缩略图开关 -->
             <button
               v-if="showPreview && pdfPreviewImages.length > 1"
@@ -530,11 +530,11 @@ const LAYOUT_CONFIG = {
                   ? 'bg-primary-100 text-primary-700'
                   : 'hover:bg-slate-200 text-slate-600'
               ]"
-              :title="showThumbnailSidebar ? '隐藏缩略图' : '显示缩略图'">
+              :title="showThumbnailSidebar ? 'Hide thumbnails' : 'Show thumbnails'">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
-              <span class="hidden sm:inline">{{ pdfPreviewImages.length }} 页</span>
+              <span class="hidden sm:inline">{{ pdfPreviewImages.length }} pages</span>
             </button>
           </div>
           <!-- 页码切换和缩放控制 -->
@@ -545,7 +545,7 @@ const LAYOUT_CONFIG = {
                 @click="currentPreviewPage = Math.max(0, currentPreviewPage - 1); resetPan()"
                 :disabled="currentPreviewPage === 0"
                 class="p-1.5 hover:bg-slate-200 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="上一页">
+                title="Previous page">
                 <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
@@ -557,7 +557,7 @@ const LAYOUT_CONFIG = {
                 @click="currentPreviewPage = Math.min(pdfPreviewImages.length - 1, currentPreviewPage + 1); resetPan()"
                 :disabled="currentPreviewPage === pdfPreviewImages.length - 1"
                 class="p-1.5 hover:bg-slate-200 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="下一页">
+                title="Next page">
                 <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
@@ -568,7 +568,7 @@ const LAYOUT_CONFIG = {
             <button
               @click="zoomOut"
               class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
-              title="缩小">
+              title="Zoom out">
               <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
               </svg>
@@ -577,7 +577,7 @@ const LAYOUT_CONFIG = {
             <button
               @click="zoomIn"
               class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
-              title="放大">
+              title="Zoom in">
               <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
@@ -585,7 +585,7 @@ const LAYOUT_CONFIG = {
             <button
               @click="resetZoom"
               class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
-              title="重置">
+              title="Reset">
               <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
               </svg>
@@ -653,7 +653,7 @@ const LAYOUT_CONFIG = {
                 @click="removeFile"
                 v-if="!isProcessing"
                 class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
-                title="移除文件">
+                title="Remove file">
                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -666,29 +666,29 @@ const LAYOUT_CONFIG = {
 
     <!-- 右侧配置区域 -->
     <div class="flex flex-col gap-3 h-full min-h-0 overflow-y-auto pr-1">
-      <!-- 水印内容 -->
+      <!-- Watermark Content -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
         <div class="px-3 py-2 flex items-center gap-3">
-          <h3 class="font-semibold text-slate-900 text-sm whitespace-nowrap">水印内容</h3>
+          <h3 class="font-semibold text-slate-900 text-sm whitespace-nowrap">Watermark Content</h3>
           <input
             v-model="watermarkText"
             type="text"
-            placeholder="输入水印文字"
+            placeholder="Enter watermark text"
             class="flex-1 min-w-0 px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
           >
         </div>
       </div>
 
-      <!-- 水印配置 -->
+      <!-- Watermark Configuration -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
         <div class="px-4 py-2.5 border-b border-slate-200">
-          <h3 class="font-semibold text-slate-900 text-sm">水印配置</h3>
+          <h3 class="font-semibold text-slate-900 text-sm">Watermark Settings</h3>
         </div>
         <div class="p-3 space-y-3">
-          <!-- 字体大小 -->
+          <!-- Font Size -->
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="text-sm font-medium text-slate-700">字体大小</label>
+              <label class="text-sm font-medium text-slate-700">Font Size</label>
               <span class="text-xs text-slate-500">{{ watermarkFontSize }}px</span>
             </div>
             <input
@@ -700,10 +700,10 @@ const LAYOUT_CONFIG = {
             >
           </div>
 
-          <!-- 旋转角度 -->
+          <!-- Rotation -->
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="text-sm font-medium text-slate-700">旋转角度</label>
+              <label class="text-sm font-medium text-slate-700">Rotation</label>
               <span class="text-xs text-slate-500">{{ watermarkRotation }}°</span>
             </div>
             <input
@@ -715,10 +715,10 @@ const LAYOUT_CONFIG = {
             >
           </div>
 
-          <!-- 透明度 -->
+          <!-- Opacity -->
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="text-sm font-medium text-slate-700">透明度</label>
+              <label class="text-sm font-medium text-slate-700">Opacity</label>
               <span class="text-xs text-slate-500">{{ watermarkOpacity }}%</span>
             </div>
             <input
@@ -730,10 +730,10 @@ const LAYOUT_CONFIG = {
             >
           </div>
 
-          <!-- 颜色和尺寸一行显示 -->
+          <!-- Color and Size in one row -->
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">颜色</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Color</label>
               <div class="flex items-center gap-1">
                 <div class="relative w-8 h-7 rounded overflow-hidden border border-slate-300 cursor-pointer hover:border-slate-400">
                   <input
@@ -750,7 +750,7 @@ const LAYOUT_CONFIG = {
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">尺寸</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Size</label>
               <div class="flex items-center gap-1">
                 <input
                   v-model.number="watermarkWidth"
@@ -773,42 +773,38 @@ const LAYOUT_CONFIG = {
         </div>
       </div>
 
-      <!-- 水印间距控制 -->
+      <!-- Watermark Spacing -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
         <div class="px-3 py-2 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="font-semibold text-slate-900 text-sm">水印间距</h3>
+          <h3 class="font-semibold text-slate-900 text-sm">Watermark Spacing</h3>
           <button
             @click="resetSpacing"
             class="text-xs text-primary-600 hover:text-primary-700 transition-colors">
-            重置
+            Reset
           </button>
         </div>
         <div class="p-2 space-y-2">
-          <!-- 滑块和数值输入合并 -->
-          <div>
-            <input
-              v-model.number="watermarkSpacingPercent"
-              type="range"
-              min="0"
-              max="200"
-              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-            >
-            <div class="flex justify-between items-center mt-1">
-              <span class="text-xs text-slate-400">0%</span>
-              <span class="text-xs text-slate-600 font-medium">{{ watermarkSpacingPercent }}% (~{{ watermarkSpacingPx }}px)</span>
-              <span class="text-xs text-slate-400">200%</span>
-            </div>
+          <input
+            v-model.number="watermarkSpacingPercent"
+            type="range"
+            min="0"
+            max="200"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+          >
+          <div class="flex justify-between items-center mt-1">
+            <span class="text-xs text-slate-400">0%</span>
+            <span class="text-xs text-slate-600 font-medium">{{ watermarkSpacingPercent }}% (~{{ watermarkSpacingPx }}px)</span>
+            <span class="text-xs text-slate-400">200%</span>
           </div>
         </div>
       </div>
 
-      <!-- 水印单元预览 - 使用固定字体大小，仅显示颜色、旋转和透明度 -->
+      <!-- Watermark Preview -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
         <div class="px-4 py-2.5 border-b border-slate-200">
-          <h3 class="font-semibold text-slate-900 text-sm">水印单元预览</h3>
+          <h3 class="font-semibold text-slate-900 text-sm">Watermark Preview</h3>
         </div>
         <div class="p-3">
-          <!-- 120px 高度，固定字体大小显示 -->
           <div
             class="rounded-lg flex items-center justify-center overflow-hidden relative"
             :style="{
@@ -817,7 +813,6 @@ const LAYOUT_CONFIG = {
               backgroundColor: '#fafafa'
             }"
           >
-            <!-- 直接渲染文本，使用固定字体大小 -->
             <div
               v-if="watermarkText"
               class="whitespace-nowrap select-none"
@@ -834,30 +829,29 @@ const LAYOUT_CONFIG = {
               {{ watermarkText }}
             </div>
             <div v-else class="text-slate-400 text-xs">
-              配置后显示预览
+              Configure to see preview
             </div>
           </div>
-          <!-- 提示文字 -->
           <p class="text-xs text-slate-500 mt-2 text-center">
-            仅显示颜色、旋转和透明度效果
+            Shows color, rotation, and opacity effects
           </p>
         </div>
       </div>
 
-      <!-- 处理按钮 -->
+      <!-- Action Button -->
       <div class="flex flex-col gap-2">
         <button
           v-if="showPreview && !isProcessing && !isCompleted"
           @click="onStartProcessing"
           :disabled="!watermarkImage"
           class="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-          添加水印
+          Add Watermark
         </button>
 
-        <!-- 处理中 -->
+        <!-- Processing -->
         <div v-if="isProcessing" class="bg-white rounded-lg p-2.5 shadow-sm">
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-medium text-slate-700">处理中...</span>
+            <span class="text-xs font-medium text-slate-700">Processing...</span>
             <span class="text-xs font-semibold text-primary-600">{{ props.currentJob?.progress }}%</span>
           </div>
           <div class="w-full bg-slate-200 rounded-full h-1.5">
@@ -868,7 +862,7 @@ const LAYOUT_CONFIG = {
           </div>
         </div>
 
-        <!-- 完成状态 -->
+        <!-- Completed -->
         <div v-if="isCompleted" class="bg-white rounded-lg p-2.5 shadow-sm border border-green-200">
           <div class="flex items-center gap-2 mb-2">
             <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
@@ -877,7 +871,7 @@ const LAYOUT_CONFIG = {
               </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-medium text-slate-900 text-sm truncate">处理完成</p>
+              <p class="font-medium text-slate-900 text-sm truncate">Processing Complete</p>
               <p class="text-xs text-slate-500 truncate">{{ props.currentJob?.result?.filename }}</p>
             </div>
           </div>
@@ -885,12 +879,12 @@ const LAYOUT_CONFIG = {
             <button
               @click="downloadFile"
               class="flex-1 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-xs font-semibold">
-              下载
+              Download
             </button>
             <button
               @click="resetAndRetry"
               class="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-xs">
-              重试
+              Retry
             </button>
           </div>
         </div>

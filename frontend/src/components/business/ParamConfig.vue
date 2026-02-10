@@ -155,17 +155,14 @@ const shouldShowSectionTitle = (optionName: string): boolean => {
       </select>
 
       <!-- Boolean Checkbox -->
-      <label v-else-if="option.type === 'boolean'" class="flex items-start gap-3 cursor-pointer">
+      <label v-else-if="option.type === 'boolean'" class="flex items-center gap-3 cursor-pointer">
         <input
           type="checkbox"
           :checked="localValues[option.name]"
-          class="w-4 h-4 mt-0.5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500 flex-shrink-0"
+          class="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500 flex-shrink-0"
           @change="(e) => updateValue(option.name, (e.target as HTMLInputElement).checked)"
         />
-        <div class="flex flex-col">
-          <span class="text-sm text-slate-700">{{ option.label }}</span>
-          <span v-if="option.description && !shouldShowSectionTitle(option.name)" class="text-xs text-slate-500">{{ option.description }}</span>
-        </div>
+        <span class="text-sm text-slate-700">{{ option.label }}</span>
       </label>
 
       <!-- Array Input (comma-separated) -->
