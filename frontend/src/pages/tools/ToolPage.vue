@@ -5,6 +5,7 @@ import { api } from '@/api/client'
 import type { Tool, Job } from '@/types'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import FileUpload from '@/components/business/FileUpload.vue'
 import ParamConfig from '@/components/business/ParamConfig.vue'
 import { generateWatermarkImage, parseColorWithOpacity } from '@/utils/watermark'
 import WatermarkTool from '@/components/tools/WatermarkTool.vue'
@@ -23,7 +24,6 @@ const pendingFiles = ref<File[]>([])  // 本地存储待上传的文件
 const isUploading = ref(false)
 const uploadProgress = ref(0)
 const pollInterval = ref<number | null>(null)
-const fileInputRef = ref<HTMLInputElement | null>(null)
 const draggedIndex = ref<number | null>(null)  // 拖拽的文件索引
 
 const toolId = computed(() => route.params.toolId as string)
@@ -306,10 +306,6 @@ const downloadFile = () => {
   }
 }
 
-const triggerFileSelect = () => {
-  fileInputRef.value?.click()
-}
-
 // 拖拽处理函数
 const onDragStart = (index: number) => {
   draggedIndex.value = index
@@ -397,155 +393,22 @@ const regenerateFileIds = () => {
                    flex flex-col items-center justify-center gap-4 min-h-[240px]"
             :class="isUploading ? 'border-slate-300 bg-slate-50 opacity-50' : 'border-slate-300 bg-slate-50 hover:border-primary-400 hover:bg-white'"
           >
-            <input
-              ref="fileInputRef"
-              type="file"
-              :accept="'application/pdf'"
-              :multiple="tool.max_files > 1"
-              class="hidden"
-              @change="(e) => handleFileUpload((e.target as HTMLInputElement).files!)"
-              :disabled="isUploading"
+            <!-- Unified File Upload Component -->
+            <FileUpload
+              :tool="tool"
+              :files="selectedFiles"
+              :is-uploading="isUploading"
+              :upload-progress="uploadProgress"
+              :show-drag-reorder="tool?.id === 'merge'"
+              :dragged-index="draggedIndex"
+              @file-select="(files) => handleFileUpload(files)"
+              @file-remove="removeFile"
+              @drag-start="onDragStart"
+              @drag-over="onDragOver"
+              @drop="onDrop"
             />
 
-            <!-- Initial upload state - no files selected -->
-            <template v-if="!isUploading && selectedFiles.length === 0">
-              <div class="p-4 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50
-                          w-20 h-20 flex items-center justify-center shadow-lg shadow-primary-100">
-                <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </div>
-
-              <p class="text-lg font-medium text-slate-700">Drag & drop files here</p>
-              <p class="text-sm text-slate-500">or click to select files (max {{ tool.max_files }})</p>
-
-              <button
-                @click="triggerFileSelect"
-                class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                Select Files
-              </button>
-
-              <p class="text-xs text-slate-400">Supports PDF files, max {{ tool.max_size_mb }}MB per file</p>
-            </template>
-
-            <!-- Add more files state - some files selected but can add more -->
-            <template v-else-if="!isUploading && selectedFiles.length > 0 && selectedFiles.length < tool.max_files">
-              <div class="p-4 rounded-2xl bg-gradient-to-br from-green-100 to-green-50
-                          w-20 h-20 flex items-center justify-center shadow-lg shadow-green-100">
-                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-              </div>
-
-              <p class="text-lg font-medium text-slate-700">Add more files</p>
-              <p class="text-sm text-slate-500">{{ selectedFiles.length }}/{{ tool.max_files }} files selected</p>
-
-              <button
-                @click="triggerFileSelect"
-                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Add More Files
-              </button>
-
-              <p class="text-xs text-slate-400">Supports PDF files, max {{ tool.max_size_mb }}MB per file</p>
-            </template>
-
-            <!-- Max files reached state -->
-            <template v-else-if="!isUploading && selectedFiles.length >= tool.max_files">
-              <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50
-                          w-20 h-20 flex items-center justify-center shadow-lg shadow-blue-100">
-                <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-
-              <p class="text-lg font-medium text-slate-700">Maximum files reached</p>
-              <p class="text-sm text-slate-500">{{ selectedFiles.length }}/{{ tool.max_files }} files selected</p>
-              <p class="text-sm text-slate-400">Remove files to add different ones</p>
-            </template>
-
-            <div v-else-if="isUploading" class="text-center">
-              <div class="relative w-32 h-32 mx-auto mb-4">
-                <svg class="w-full h-full -rotate-90">
-                  <circle cx="64" cy="64" r="56" fill="none" stroke="currentColor" class="text-slate-200" stroke-width="8" />
-                  <circle
-                    cx="64" cy="64" r="56" fill="none" stroke="currentColor" class="text-primary-600 transition-all duration-300"
-                    :stroke-dasharray="351.86" :stroke-dashoffset="351.86 * (1 - uploadProgress / 100)" stroke-linecap="round"
-                  />
-                </svg>
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <span class="text-2xl font-bold text-slate-700">{{ uploadProgress }}%</span>
-                </div>
-              </div>
-              <p class="text-slate-600">Uploading...</p>
-            </div>
-          </div>
-
-          <!-- Selected files list -->
-          <div v-if="selectedFiles.length > 0" class="px-4 pb-4">
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-sm font-medium text-slate-700">Selected files:</p>
-              <p v-if="tool?.id === 'merge'" class="text-xs text-slate-500">
-                Drag to reorder • Files will be merged in this order
-              </p>
-            </div>
-            <div class="space-y-2 max-h-[200px] overflow-y-auto">
-              <div
-                v-for="(file, index) in selectedFiles"
-                :key="file.file_id"
-                class="flex items-center justify-between p-3 rounded-lg border transition-all duration-200"
-                :class="{
-                  'bg-slate-50 border-slate-200': draggedIndex !== index,
-                  'bg-white border-primary-400 shadow-md': draggedIndex === index,
-                  'ring-2 ring-primary-300': tool?.id === 'merge' && draggedIndex !== index
-                }"
-                :draggable="tool?.id === 'merge' && !isUploading"
-                @dragstart="onDragStart(index)"
-                @dragover="onDragOver"
-                @drop="onDrop(index)"
-              >
-                <div class="flex items-center gap-3">
-                  <!-- 拖拽把手 -->
-                  <svg
-                    v-if="tool?.id === 'merge'"
-                    class="w-5 h-5 text-slate-400 cursor-move"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                  </svg>
-                  <!-- 序号 -->
-                  <span
-                    v-if="tool?.id === 'merge'"
-                    class="w-6 h-6 flex items-center justify-center bg-primary-600 text-white text-sm font-semibold rounded-full"
-                  >
-                    {{ index + 1 }}
-                  </span>
-                  <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
-                  </svg>
-                  <span class="text-slate-700 truncate max-w-[200px]">{{ file.name }}</span>
-                  <span class="text-sm text-slate-400">({{ (file.size / 1024 / 1024).toFixed(2) }} MB)</span>
-                </div>
-                <!-- 删除按钮 -->
-                <button
-                  v-if="!isUploading"
-                  @click="removeFile(file.file_id)"
-                  class="p-1 hover:bg-slate-200 rounded transition-colors"
-                  title="Remove file"
-                >
-                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Progress -->
+            <!-- Progress -->
         <div v-if="isProcessing" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div class="mb-4">
             <div class="flex items-center justify-between mb-2">
