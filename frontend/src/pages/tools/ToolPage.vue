@@ -1,345 +1,384 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { api } from '@/api/client'
-import type { Tool, Job } from '@/types'
-import AppHeader from '@/components/layout/AppHeader.vue'
-import AppFooter from '@/components/layout/AppFooter.vue'
-import FileUpload from '@/components/business/FileUpload.vue'
-import ParamConfig from '@/components/business/ParamConfig.vue'
-import { generateWatermarkImage, parseColorWithOpacity } from '@/utils/watermark'
-import WatermarkTool from '@/components/tools/WatermarkTool.vue'
-import RemoveWatermarkTool from '@/components/tools/RemoveWatermarkTool.vue'
-import RemoveWatermarkImageTool from '@/components/tools/RemoveWatermarkImageTool.vue'
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { api } from "@/api/client";
+import type { Tool, Job } from "@/types";
+import AppHeader from "@/components/layout/AppHeader.vue";
+import AppFooter from "@/components/layout/AppFooter.vue";
+import FileUpload from "@/components/business/FileUpload.vue";
+import ParamConfig from "@/components/business/ParamConfig.vue";
+import {
+  generateWatermarkImage,
+  parseColorWithOpacity,
+} from "@/utils/watermark";
+import WatermarkTool from "@/components/tools/WatermarkTool.vue";
+import RemoveWatermarkTool from "@/components/tools/RemoveWatermarkTool.vue";
+import RemoveWatermarkImageTool from "@/components/tools/RemoveWatermarkImageTool.vue";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const tool = ref<Tool | null>(null)
-const uploadId = ref<string | null>(null)
-const currentJob = ref<Job | null>(null)
-const options = ref<Record<string, any>>({})
-const selectedFiles = ref<any[]>([])
-const pendingFiles = ref<File[]>([])  // 本地存储待上传的文件
-const isUploading = ref(false)
-const uploadProgress = ref(0)
-const pollInterval = ref<number | null>(null)
-const draggedIndex = ref<number | null>(null)  // 拖拽的文件索引
+const tool = ref<Tool | null>(null);
+const uploadId = ref<string | null>(null);
+const currentJob = ref<Job | null>(null);
+const options = ref<Record<string, any>>({});
+const selectedFiles = ref<any[]>([]);
+const pendingFiles = ref<File[]>([]); // 本地存储待上传的文件
+const isUploading = ref(false);
+const uploadProgress = ref(0);
+const pollInterval = ref<number | null>(null);
+const draggedIndex = ref<number | null>(null); // 拖拽的文件索引
 
-const toolId = computed(() => route.params.toolId as string)
+const toolId = computed(() => route.params.toolId as string);
 
 // 判断是否是水印工具
-const isWatermarkTool = computed(() => toolId.value === 'add_watermark')
+const isWatermarkTool = computed(() => toolId.value === "add_watermark");
 
 // 判断是否是除水印工具
-const isRemoveWatermarkTool = computed(() => toolId.value === 'remove_watermark')
+const isRemoveWatermarkTool = computed(
+  () => toolId.value === "remove_watermark"
+);
 
 // 判断是否是图片颜色除水印工具
-const isRemoveWatermarkImageTool = computed(() => toolId.value === 'remove_watermark_image')
+const isRemoveWatermarkImageTool = computed(
+  () => toolId.value === "remove_watermark_image"
+);
 
 onMounted(async () => {
   try {
-    const response = await api.tools.getById(toolId.value)
-    tool.value = response.data
+    const response = await api.tools.getById(toolId.value);
+    tool.value = response.data;
 
     // Set default options
     if (tool.value?.options) {
-      tool.value.options.forEach(opt => {
+      tool.value.options.forEach((opt) => {
         if (opt.default !== undefined) {
-          options.value[opt.name] = opt.default
+          options.value[opt.name] = opt.default;
         }
-      })
+      });
     }
   } catch (error: any) {
-    console.error('Failed to load tool:', error)
-    router.push('/')
+    console.error("Failed to load tool:", error);
+    router.push("/");
   }
-})
+});
 
 onUnmounted(() => {
   if (pollInterval.value) {
-    clearInterval(pollInterval.value)
+    clearInterval(pollInterval.value);
   }
-})
+});
 
 // 处理来自 WatermarkTool 组件的处理请求
-const handleWatermarkProcessing = async ({ uploadId, options }: { uploadId: string, options: any }) => {
+const handleWatermarkProcessing = async ({
+  uploadId,
+  options,
+}: {
+  uploadId: string;
+  options: any;
+}) => {
   try {
     const response = await api.jobs.create({
       tool_id: toolId.value,
       upload_id: uploadId,
-      options: options
-    })
+      options: options,
+    });
 
-    currentJob.value = response.data
-    startPolling()
+    currentJob.value = response.data;
+    startPolling();
   } catch (error: any) {
-    console.error('Failed to create job:', error)
-    alert(error.error?.message || 'Failed to start processing')
+    console.error("Failed to create job:", error);
+    alert(error.error?.message || "Failed to start processing");
   }
-}
+};
 
 // 处理来自 RemoveWatermarkTool 组件的处理请求
-const handleRemoveWatermarkProcessing = async ({ uploadId, options }: { uploadId: string, options: any }) => {
+const handleRemoveWatermarkProcessing = async ({
+  uploadId,
+  options,
+}: {
+  uploadId: string;
+  options: any;
+}) => {
   try {
     const response = await api.jobs.create({
       tool_id: toolId.value,
       upload_id: uploadId,
-      options: options
-    })
+      options: options,
+    });
 
-    currentJob.value = response.data
-    startPolling()
+    currentJob.value = response.data;
+    startPolling();
   } catch (error: any) {
-    console.error('Failed to create job:', error)
-    alert(error.error?.message || 'Failed to start processing')
+    console.error("Failed to create job:", error);
+    alert(error.error?.message || "Failed to start processing");
   }
-}
+};
 
 // 处理来自 RemoveWatermarkImageTool 组件的处理请求
-const handleRemoveWatermarkImageProcessing = async ({ uploadId, options }: { uploadId: string, options: any }) => {
+const handleRemoveWatermarkImageProcessing = async ({
+  uploadId,
+  options,
+}: {
+  uploadId: string;
+  options: any;
+}) => {
   try {
     const response = await api.jobs.create({
       tool_id: toolId.value,
       upload_id: uploadId,
-      options: options
-    })
+      options: options,
+    });
 
-    currentJob.value = response.data
-    startPolling()
+    currentJob.value = response.data;
+    startPolling();
   } catch (error: any) {
-    console.error('Failed to create job:', error)
-    alert(error.error?.message || 'Failed to start processing')
+    console.error("Failed to create job:", error);
+    alert(error.error?.message || "Failed to start processing");
   }
-}
+};
 
 const onStartProcessing = async () => {
   // 检查加密/解密工具的密码是否已填写
-  if (toolId.value === 'encrypt_decrypt') {
-    if (!options.value.password || options.value.password.trim() === '') {
-      alert('请输入密码')
-      return
+  if (toolId.value === "encrypt_decrypt") {
+    if (!options.value.password || options.value.password.trim() === "") {
+      alert("请输入密码");
+      return;
     }
   }
 
   // 如果还没有上传文件，先上传所有文件
-  const uid = uploadId.value || await uploadAllFiles()
-  if (!uid) return
+  const uid = uploadId.value || (await uploadAllFiles());
+  if (!uid) return;
 
   try {
-    let finalOptions = { ...options.value }
+    let finalOptions = { ...options.value };
 
     // For add_watermark tool, generate watermark image on frontend
-    if (toolId.value === 'add_watermark' && options.value.type === 'text') {
+    if (toolId.value === "add_watermark" && options.value.type === "text") {
       const watermarkImage = await generateWatermarkImage({
-        text: options.value.text || 'Watermark',
+        text: options.value.text || "Watermark",
         fontSize: 50,
-        fontFamily: 'Arial, sans-serif',
-        color: parseColorWithOpacity('#808080', options.value.opacity / 100),
+        fontFamily: "Arial, sans-serif",
+        color: parseColorWithOpacity("#808080", options.value.opacity / 100),
         opacity: (options.value.opacity || 30) / 100,
-        rotation: parseInt(options.value.rotation || '0')
-      })
+        rotation: parseInt(options.value.rotation || "0"),
+      });
       // Add the generated image to options
       finalOptions = {
         ...finalOptions,
-        watermark_image: watermarkImage
-      }
+        watermark_image: watermarkImage,
+      };
     }
 
     const response = await api.jobs.create({
       tool_id: toolId.value,
       upload_id: uid,
-      options: finalOptions
-    })
+      options: finalOptions,
+    });
 
-    currentJob.value = response.data
-    startPolling()
+    currentJob.value = response.data;
+    startPolling();
   } catch (error: any) {
-    console.error('Failed to create job:', error)
-    alert(error.error?.message || 'Failed to start processing')
+    console.error("Failed to create job:", error);
+    alert(error.error?.message || "Failed to start processing");
   }
-}
+};
 
 const startPolling = () => {
   pollInterval.value = window.setInterval(async () => {
-    if (!currentJob.value) return
+    if (!currentJob.value) return;
 
     try {
-      const response = await api.jobs.getStatus(currentJob.value.job_id)
-      currentJob.value = response.data
+      const response = await api.jobs.getStatus(currentJob.value.job_id);
+      currentJob.value = response.data;
 
-      if (response.data.status === 'completed' || response.data.status === 'failed') {
+      if (
+        response.data.status === "completed" ||
+        response.data.status === "failed"
+      ) {
         if (pollInterval.value) {
-          clearInterval(pollInterval.value)
-          pollInterval.value = null
+          clearInterval(pollInterval.value);
+          pollInterval.value = null;
         }
       }
     } catch (error: any) {
-      console.error('Failed to poll job status:', error)
+      console.error("Failed to poll job status:", error);
     }
-  }, 1000)
-}
+  }, 1000);
+};
 
 const handleFileUpload = (files: FileList) => {
-  if (!tool.value || files.length === 0) return
+  if (!tool.value || files.length === 0) return;
 
   // 计算还能添加多少个文件
-  const remainingSlots = tool.value.max_files - pendingFiles.value.length
+  const remainingSlots = tool.value.max_files - pendingFiles.value.length;
 
   // 检查是否超过最大文件数
   if (files.length > remainingSlots) {
-    alert(`只能再添加 ${remainingSlots} 个文件（当前 ${pendingFiles.value.length}/${tool.value.max_files}）\n请一次选择更多文件，或者删除部分文件后再添加。`)
-    return
+    alert(
+      `只能再添加 ${remainingSlots} 个文件（当前 ${pendingFiles.value.length}/${tool.value.max_files}）\n请一次选择更多文件，或者删除部分文件后再添加。`
+    );
+    return;
   }
 
   // 验证文件类型和大小
-  const maxSizeBytes = tool.value.max_size_mb * 1024 * 1024
-  const validFiles: File[] = []
-  const invalidFiles: string[] = []
+  const maxSizeBytes = tool.value.max_size_mb * 1024 * 1024;
+  const validFiles: File[] = [];
+  const invalidFiles: string[] = [];
 
   for (const file of Array.from(files)) {
-    if (!file.type.includes('pdf')) {
-      invalidFiles.push(`${file.name} (不是PDF文件)`)
-      continue
+    if (!file.type.includes("pdf")) {
+      invalidFiles.push(`${file.name} (不是PDF文件)`);
+      continue;
     }
     if (file.size > maxSizeBytes) {
-      invalidFiles.push(`${file.name} (超过${tool.value.max_size_mb}MB限制)`)
-      continue
+      invalidFiles.push(`${file.name} (超过${tool.value.max_size_mb}MB限制)`);
+      continue;
     }
-    validFiles.push(file)
+    validFiles.push(file);
   }
 
   // 如果有无效文件，显示提示
   if (invalidFiles.length > 0) {
-    alert(`以下文件无法添加:\n${invalidFiles.join('\n')}`)
+    alert(`以下文件无法添加:\n${invalidFiles.join("\n")}`);
   }
 
   // 如果没有有效文件，直接返回
   if (validFiles.length === 0) {
-    return
+    return;
   }
 
   // 添加到待上传列表
-  pendingFiles.value = [...pendingFiles.value, ...validFiles]
+  pendingFiles.value = [...pendingFiles.value, ...validFiles];
 
   // 更新显示的文件列表（使用本地文件信息）
   selectedFiles.value = pendingFiles.value.map((file, index) => ({
     file_id: `pending-${index}`,
     name: file.name,
-    size: file.size
-  }))
-}
+    size: file.size,
+  }));
+};
 
 const uploadAllFiles = async () => {
-  if (pendingFiles.value.length === 0 || !tool.value) return null
+  if (pendingFiles.value.length === 0 || !tool.value) return null;
 
-  isUploading.value = true
-  uploadProgress.value = 0
+  isUploading.value = true;
+  uploadProgress.value = 0;
 
   try {
-    const formData = new FormData()
+    const formData = new FormData();
     // 按照当前 pendingFiles 的顺序上传
-    pendingFiles.value.forEach(file => formData.append('files', file))
-    formData.append('tool_id', tool.value.id)
+    pendingFiles.value.forEach((file) => formData.append("files", file));
+    formData.append("tool_id", tool.value.id);
 
     const response = await api.files.upload(formData, (progress) => {
-      uploadProgress.value = progress
-    })
+      uploadProgress.value = progress;
+    });
 
     // 后端返回: {success: true, data: {upload_id: "...", files: [...]}}
     if (response?.data) {
-      uploadId.value = response.data.upload_id
+      uploadId.value = response.data.upload_id;
       // 清空 pendingFiles（已上传）
-      pendingFiles.value = []
+      pendingFiles.value = [];
       // 更新 selectedFiles，保持文件名映射关系
-      selectedFiles.value = response.data.files.map((serverFile: any, index: number) => ({
-        ...serverFile,
-        name: serverFile.name || selectedFiles.value[index]?.name || `file_${index + 1}.pdf`
-      }))
-      return response.data.upload_id
+      selectedFiles.value = response.data.files.map(
+        (serverFile: any, index: number) => ({
+          ...serverFile,
+          name:
+            serverFile.name ||
+            selectedFiles.value[index]?.name ||
+            `file_${index + 1}.pdf`,
+        })
+      );
+      return response.data.upload_id;
     }
-    return null
+    return null;
   } catch (error: any) {
-    console.error('Upload failed:', error)
-    alert(error.error?.message || 'Upload failed')
-    return null
+    console.error("Upload failed:", error);
+    alert(error.error?.message || "Upload failed");
+    return null;
   } finally {
-    isUploading.value = false
+    isUploading.value = false;
   }
-}
+};
 
-const isProcessing = computed(() =>
-  currentJob.value?.status === 'queued' || currentJob.value?.status === 'processing'
-)
+const isProcessing = computed(
+  () =>
+    currentJob.value?.status === "queued" ||
+    currentJob.value?.status === "processing"
+);
 
-const isCompleted = computed(() => currentJob.value?.status === 'completed')
+const isCompleted = computed(() => currentJob.value?.status === "completed");
 
-const isFailed = computed(() => currentJob.value?.status === 'failed')
+const isFailed = computed(() => currentJob.value?.status === "failed");
 
 const removeFile = (fileId: string) => {
   // 如果文件ID是pending格式，从pendingFiles中移除
-  if (fileId.startsWith('pending-')) {
-    const index = parseInt(fileId.replace('pending-', ''))
-    pendingFiles.value = pendingFiles.value.filter((_, i) => i !== index)
+  if (fileId.startsWith("pending-")) {
+    const index = parseInt(fileId.replace("pending-", ""));
+    pendingFiles.value = pendingFiles.value.filter((_, i) => i !== index);
     // 重新生成文件列表
-    regenerateFileIds()
+    regenerateFileIds();
   } else {
     // 已上传的文件，直接从 selectedFiles 移除
-    selectedFiles.value = selectedFiles.value.filter(f => f.file_id !== fileId)
+    selectedFiles.value = selectedFiles.value.filter(
+      (f) => f.file_id !== fileId
+    );
   }
 
   if (selectedFiles.value.length === 0) {
-    uploadId.value = null
+    uploadId.value = null;
   }
-}
+};
 
 const resetAndRetry = () => {
-  currentJob.value = null
-  uploadId.value = null
-  selectedFiles.value = []
-  pendingFiles.value = []
-}
+  currentJob.value = null;
+  uploadId.value = null;
+  selectedFiles.value = [];
+  pendingFiles.value = [];
+};
 
 const downloadFile = () => {
   if (currentJob.value?.result?.download_url) {
-    window.open(currentJob.value.result.download_url, '_self')
+    window.open(currentJob.value.result.download_url, "_self");
   }
-}
+};
 
 // 拖拽处理函数
 const onDragStart = (index: number) => {
-  draggedIndex.value = index
-}
+  draggedIndex.value = index;
+};
 
 const onDragOver = (e: DragEvent) => {
-  e.preventDefault()  // 允许放置
-}
+  e.preventDefault(); // 允许放置
+};
 
 const onDrop = (targetIndex: number) => {
   if (draggedIndex.value === null || draggedIndex.value === targetIndex) {
-    draggedIndex.value = null
-    return
+    draggedIndex.value = null;
+    return;
   }
 
   // 从 pendingFiles 中移除拖拽的文件
-  const [movedFile] = pendingFiles.value.splice(draggedIndex.value, 1)
+  const [movedFile] = pendingFiles.value.splice(draggedIndex.value, 1);
   // 插入到目标位置
-  pendingFiles.value.splice(targetIndex, 0, movedFile)
+  pendingFiles.value.splice(targetIndex, 0, movedFile);
 
   // 重新生成 file_id 映射
-  regenerateFileIds()
+  regenerateFileIds();
 
-  draggedIndex.value = null
-}
+  draggedIndex.value = null;
+};
 
 const regenerateFileIds = () => {
   // 根据 pendingFiles 的顺序重新生成 selectedFiles 的 file_id
   selectedFiles.value = pendingFiles.value.map((file, i) => ({
     file_id: `pending-${i}`,
     name: file.name,
-    size: file.size
-  }))
-}
+    size: file.size,
+  }));
+};
 </script>
 
 <template>
@@ -387,28 +426,22 @@ const regenerateFileIds = () => {
             <!-- Left Panel: Upload & Files (2/3) -->
             <div class="lg:col-span-2 flex flex-col gap-4 h-full min-h-0">
         <!-- Upload area -->
-        <div v-if="!isProcessing && !isCompleted && !isFailed" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div
-            class="border-2 border-dashed m-4 rounded-2xl p-12 transition-all duration-300
-                   flex flex-col items-center justify-center gap-4 min-h-[240px]"
-            :class="isUploading ? 'border-slate-300 bg-slate-50 opacity-50' : 'border-slate-300 bg-slate-50 hover:border-primary-400 hover:bg-white'"
-          >
-            <!-- Unified File Upload Component -->
-            <FileUpload
-              :tool="tool"
-              :files="selectedFiles"
-              :is-uploading="isUploading"
-              :upload-progress="uploadProgress"
-              :show-drag-reorder="tool?.id === 'merge'"
-              :dragged-index="draggedIndex"
-              @file-select="(files) => handleFileUpload(files)"
-              @file-remove="removeFile"
-              @drag-start="onDragStart"
-              @drag-over="onDragOver"
-              @drop="onDrop"
-            />
+        <FileUpload
+          v-if="!isProcessing && !isCompleted && !isFailed"
+          :tool="tool"
+          :files="selectedFiles"
+          :is-uploading="isUploading"
+          :upload-progress="uploadProgress"
+          :show-drag-reorder="tool?.id === 'merge'"
+          :dragged-index="draggedIndex"
+          @file-select="(files) => handleFileUpload(files)"
+          @file-remove="removeFile"
+          @drag-start="onDragStart"
+          @drag-over="onDragOver"
+          @drop="onDrop"
+        />
 
-            <!-- Progress -->
+        <!-- Progress -->
         <div v-if="isProcessing" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div class="mb-4">
             <div class="flex items-center justify-between mb-2">
