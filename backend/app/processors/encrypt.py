@@ -68,8 +68,8 @@ class EncryptDecryptProcessor(BaseProcessor):
         password = options.get("password", "")
         algorithm = options.get("algorithm", "AES-256")
         allow_printing = options.get("allow_printing", True)
-        allow_copying = options.get("allow_copying", False)
-        allow_modifying = options.get("allow_modifying", False)
+        allow_copying = options.get("allow_copying", True)
+        allow_modifying = options.get("allow_modifying", True)
 
         if not password:
             raise ValueError("Password is required for encryption")
@@ -83,8 +83,7 @@ class EncryptDecryptProcessor(BaseProcessor):
         }
         encryption_method = encryption_map.get(algorithm, fitz.PDF_ENCRYPT_AES_256)
 
-        # Build permissions - these are the operations that ARE ALLOWED
-        # Start with minimal permissions (only accessibility for screen readers)
+        # Build permissions based on user selection
         permissions = fitz.PDF_PERM_ACCESSIBILITY  # Always allow accessibility
 
         if allow_printing:

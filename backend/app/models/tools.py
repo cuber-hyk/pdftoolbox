@@ -276,7 +276,7 @@ TOOLS_DB = [
                 "type": "boolean",
                 "label": "Allow Copying",
                 "description": "Allow users to copy text and images",
-                "default": False,
+                "default": True,
                 "depends_on": {"operation": "encrypt"},
             },
             {
@@ -284,7 +284,7 @@ TOOLS_DB = [
                 "type": "boolean",
                 "label": "Allow Modifying",
                 "description": "Allow users to modify the PDF",
-                "default": False,
+                "default": True,
                 "depends_on": {"operation": "encrypt"},
             },
         ],

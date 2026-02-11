@@ -72,37 +72,26 @@ const getSectionTitle = (optionName: string): string => {
     'operation': 'Operation',
     'password': 'Password',
     'algorithm': 'Encryption',
-    'allow_printing': 'Permissions',
-    'allow_copying': '',
-    'allow_modifying': ''
   }
   return sectionTitles[optionName] || ''
 }
 
 const shouldShowSectionTitle = (optionName: string): boolean => {
-  return optionName === 'allow_printing'
+  return false
 }
 </script>
 
 <template>
   <div v-if="visibleOptions.length > 0" class="space-y-4">
     <div v-for="(option, index) in visibleOptions" :key="option.name" class="space-y-2">
-      <!-- Section header for permissions -->
-      <div v-if="shouldShowSectionTitle(option.name)" class="pt-2">
-        <h4 class="text-sm font-semibold text-slate-900">Permissions</h4>
-        <p class="text-xs text-amber-600 bg-amber-50 p-2 rounded mt-1">
-          Note: Some PDF viewers (especially browsers) may ignore these restrictions. For full protection, use Adobe Acrobat.
-        </p>
-      </div>
-
-      <!-- Label with required indicator -->
-      <label v-if="!shouldShowSectionTitle(option.name)" class="flex items-center gap-1 text-sm font-medium text-slate-700">
+      <!-- Label with required indicator (not for boolean) -->
+      <label v-if="option.type !== 'boolean'" class="flex items-center gap-1 text-sm font-medium text-slate-700">
         {{ option.label }}
         <span v-if="option.required" class="text-red-500">*</span>
       </label>
 
-      <!-- Description (except for password fields) -->
-      <p v-if="option.description && !isPasswordField(option.name) && !shouldShowSectionTitle(option.name)" class="text-xs text-slate-500">
+      <!-- Description (except for password fields and boolean) -->
+      <p v-if="option.description && !isPasswordField(option.name) && option.type !== 'boolean'" class="text-xs text-slate-500">
         {{ option.description }}
       </p>
 
@@ -154,8 +143,8 @@ const shouldShowSectionTitle = (optionName: string): boolean => {
         </option>
       </select>
 
-      <!-- Boolean Checkbox -->
-      <label v-else-if="option.type === 'boolean'" class="flex items-center gap-3 cursor-pointer">
+      <!-- Boolean Checkbox - simple inline style without description -->
+      <label v-if="option.type === 'boolean'" class="flex items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
           :checked="localValues[option.name]"
